@@ -1,0 +1,3 @@
+Здесь можно положить свои PNG-иконки и расширить scripts/patch_branding.py,
+если захочешь полностью заменить adaptive icon / splash screen.
+Текущая версия добавляет простой чёрно-белый vector shield T.
