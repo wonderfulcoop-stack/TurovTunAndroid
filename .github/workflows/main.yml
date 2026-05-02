@@ -34,7 +34,7 @@ jobs:
           sudo apt-get install -y gcc libc-dev make python3 python3-pip git unzip zip
           python3 -m pip install --user pillow
           yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager "platforms;android-36" "platforms;android-35" "build-tools;36.0.0" "cmdline-tools;latest"
+          sdkmanager "platforms;android-35" "build-tools;35.0.0" "cmdline-tools;latest" "ndk;27.2.12479018"
 
       - name: Build real VPN APK
         run: bash scripts/build_turovtun.sh
