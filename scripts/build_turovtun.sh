@@ -15,6 +15,11 @@ git clone --depth 1 https://github.com/SagerNet/sing-box.git sing-box-core
 
 echo "==> Build libbox.aar"
 cd sing-box-core
+
+export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/27.2.12479018"
+export NDK="$ANDROID_NDK_HOME"
+export PATH="$ANDROID_NDK_HOME:$PATH"
+
 make lib_install
 make lib_android
 
