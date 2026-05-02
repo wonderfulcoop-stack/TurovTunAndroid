@@ -17,8 +17,24 @@ echo "==> Build libbox.aar"
 cd sing-box-core
 
 export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/27.2.12479018"
+export ANDROID_NDK_ROOT="$ANDROID_NDK_HOME"
 export NDK="$ANDROID_NDK_HOME"
 export PATH="$ANDROID_NDK_HOME:$PATH"
+
+echo "==> Patch libbox build tags: remove with_quic"
+python3 - <<'PY'
+from pathlib import Path
+
+p = Path("cmd/internal/build_libbox/main.go")
+text = p.read_text()
+
+text = text.replace('"with_quic",', "")
+text = text.replace("with_quic,", "")
+text = text.replace(",with_quic", "")
+
+p.write_text(text)
+print("patched", p)
+PY
 
 make lib_install
 make lib_android
