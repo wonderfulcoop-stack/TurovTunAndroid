@@ -7,67 +7,52 @@ ROOT_DIR="$(pwd)"
 WORK_DIR="$ROOT_DIR/work"
 OUT_DIR="$ROOT_DIR/output"
 
+ANDROID_REPO="https://github.com/SagerNet/sing-box-for-android.git"
+LIBBOX_URL="https://github.com/SagerNet/sing-box/releases/latest/download/libbox.aar"
+
+rm -rf "$WORK_DIR"
 mkdir -p "$WORK_DIR" "$OUT_DIR"
+
 cd "$WORK_DIR"
 
-echo "==> Clone sing-box core"
-git clone --depth 1 https://github.com/SagerNet/sing-box.git sing-box-core
+echo "==> Clone Android client"
+git clone --depth 1 "$ANDROID_REPO" sing-box-for-android
 
-echo "==> Build libbox.aar"
-cd sing-box-core
+cd sing-box-for-android
 
-export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/27.2.12479018"
-export ANDROID_NDK_ROOT="$ANDROID_NDK_HOME"
-export NDK="$ANDROID_NDK_HOME"
-export PATH="$ANDROID_NDK_HOME:$PATH"
+echo "==> Prepare libbox.aar"
+mkdir -p app/libs
 
-echo "==> Patch libbox build tags: remove with_quic"
-python3 - <<'PY'
-from pathlib import Path
+echo "==> Download ready libbox.aar"
+curl -fL --retry 5 --retry-delay 5 -o app/libs/libbox.aar "$LIBBOX_URL"
 
-p = Path("cmd/internal/build_libbox/main.go")
-text = p.read_text()
-
-text = text.replace('"with_quic",', "")
-text = text.replace("with_quic,", "")
-text = text.replace(",with_quic", "")
-
-p.write_text(text)
-print("patched", p)
-PY
-
-make lib_install
-make lib_android
-
-echo "==> Clone sing-box Android client"
-cd "$WORK_DIR"
-git clone --depth 1 https://github.com/SagerNet/sing-box-for-android.git sing-box-for-android
-
-echo "==> Copy libbox.aar into Android app"
-mkdir -p "$WORK_DIR/sing-box-for-android/app/libs"
-
-if [ -f "$WORK_DIR/sing-box-core/libbox.aar" ]; then
-  cp "$WORK_DIR/sing-box-core/libbox.aar" "$WORK_DIR/sing-box-for-android/app/libs/libbox.aar"
-elif [ -f "$WORK_DIR/sing-box-core/bin/libbox.aar" ]; then
-  cp "$WORK_DIR/sing-box-core/bin/libbox.aar" "$WORK_DIR/sing-box-for-android/app/libs/libbox.aar"
-else
-  echo "ERROR: libbox.aar not found"
-  find "$WORK_DIR/sing-box-core" -name "*libbox*.aar" -o -name "libbox.aar"
+if [ ! -s app/libs/libbox.aar ]; then
+  echo "ERROR: libbox.aar was not downloaded or file is empty"
   exit 1
 fi
 
 echo "==> Apply TurovTun branding"
-cd "$WORK_DIR/sing-box-for-android"
 if [ -f "$ROOT_DIR/scripts/patch_sfa.py" ]; then
   python3 "$ROOT_DIR/scripts/patch_sfa.py" "$PWD" "$ROOT_DIR" || true
+else
+  echo "WARN: patch_sfa.py not found, skipping branding"
 fi
 
-echo "==> Build Android APK"
+echo "==> Build APK"
 chmod +x ./gradlew || true
-./gradlew --no-daemon :app:assembleDebug
+./gradlew --no-daemon :app:assembleOtherDebug || ./gradlew --no-daemon :app:assembleDebug
 
 echo "==> Collect APK"
+mkdir -p "$OUT_DIR"
 find app/build/outputs/apk -type f -name "*.apk" -print -exec cp -f {} "$OUT_DIR/" \;
 
-echo "==> Done"
-ls -la "$OUT_DIR"
+APK_COUNT="$(find "$OUT_DIR" -type f -name "*.apk" | wc -l | tr -d ' ')"
+
+if [ "$APK_COUNT" = "0" ]; then
+  echo "ERROR: APK was not created"
+  find app/build/outputs -type f || true
+  exit 1
+fi
+
+echo "==> Done. APK files:"
+ls -lh "$OUT_DIR"
