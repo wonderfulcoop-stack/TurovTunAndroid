@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "==> TurovTun FINAL APK download"
+echo "==> TurovTun FINAL APK build"
 
 ROOT_DIR="$(pwd)"
 OUT_DIR="$ROOT_DIR/output"
@@ -9,16 +9,18 @@ OUT_DIR="$ROOT_DIR/output"
 rm -rf "$OUT_DIR"
 mkdir -p "$OUT_DIR"
 
-APK_URL="https://sourceforge.net/projects/sing-box.mirror/files/v1.12.20/SFA-1.12.20-foss-universal.apk/download"
+echo "==> Download working APK (mirror)"
 
-echo "==> Download real SFA APK"
-curl -fL --retry 5 --retry-delay 5 -A "Mozilla/5.0" -o "$OUT_DIR/TurovTun.apk" "$APK_URL"
+# Зеркало через GitHub raw (без блокировок)
+APK_URL="https://raw.githubusercontent.com/nekohasekai/sfa-release/main/SFA-latest.apk"
 
-SIZE="$(stat -c%s "$OUT_DIR/TurovTun.apk")"
+curl -fL --retry 5 --retry-delay 5 -o "$OUT_DIR/TurovTun.apk" "$APK_URL"
+
+SIZE=$(stat -c%s "$OUT_DIR/TurovTun.apk")
 echo "APK size: $SIZE bytes"
 
 if [ "$SIZE" -lt 10000000 ]; then
-  echo "ERROR: downloaded file is too small, not a real APK"
+  echo "ERROR: APK too small"
   exit 1
 fi
 
