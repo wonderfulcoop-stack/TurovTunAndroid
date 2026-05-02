@@ -4,7 +4,8 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 WORK_DIR="$ROOT_DIR/.build"
 OUT_DIR="$ROOT_DIR/output"
-SING_BOX_REPO="${SING_BOX_REPO:-https://github.com/SagerNet/sing-box.git}"
+
+SING_BOX_REPO="${SING_BOX_REPO:-https://github.com/SagerNet/sing-box-for-android.git}"
 SING_BOX_REF="${SING_BOX_REF:-dev}"
 
 rm -rf "$WORK_DIR" "$OUT_DIR"
@@ -18,10 +19,10 @@ git clone --recursive --depth=1 --branch "$SING_BOX_REF" "$SING_BOX_REPO" sing-b
 }
 cd sing-box
 
-ANDROID_APP_DIR="clients/android/app"
-ANDROID_ROOT_DIR="clients/android"
+ANDROID_APP_DIR="app"
+ANDROID_ROOT_DIR="."
 if [ ! -d "$ANDROID_APP_DIR" ]; then
-  echo "ERROR: clients/android/app not found in sing-box source"
+  echo "ERROR: app directory not found in sing-box-for-android source"
   echo "Repository layout changed. Send the GitHub Actions log to ChatGPT."
   exit 10
 fi
@@ -60,8 +61,7 @@ python3 "$ROOT_DIR/scripts/patch_sfa.py" "$PWD" "$ROOT_DIR"
 echo "==> Build Android APK"
 cd "$ANDROID_ROOT_DIR"
 chmod +x ./gradlew || true
-# Prefer universal debug APK: installable without release keystore.
-./gradlew --no-daemon :app:assembleOtherDebug
+./gradlew --no-daemon :app:assembleDebug
 
 echo "==> Collect APK files"
 find app/build/outputs/apk -type f -name '*.apk' -print -exec cp -f {} "$OUT_DIR/" \;
